@@ -31,89 +31,95 @@
 
                 <!-- Age -->
                 <div class="field-group">
-                    <label>Age <span class="unit">years</span></label>
-                    <input type="number" name="Age" placeholder="e.g. 67" min="1" max="120" required>
+                    <label for="age">Age <span class="unit">years</span></label>
+                    <input type="number" id="age" name="Age" placeholder="e.g. 67" min="1" max="120" required>
                 </div>
 
                 <!-- Sex -->
                 <div class="field-group">
-                    <label>Sex <span class="unit">1=Male, 0=Female</span></label>
-                    <input type="number" name="Sex" placeholder="0 or 1" min="0" max="1" required>
+                    <label for="sex">Sex <span class="unit">1=Male, 0=Female</span></label>
+                    <input type="number" id="sex" name="Sex" placeholder="0 or 1" min="0" max="1" required>
                 </div>
 
                 <!-- Chest Pain -->
                 <div class="field-group">
-                    <label>Chest Pain Type</label>
+                    <label for="chest-pain-type">Chest Pain Type</label>
                     <div class="hint">1=Typical Angina &nbsp;|&nbsp; 2=Atypical &nbsp;|&nbsp; 3=Non-Anginal &nbsp;|&nbsp; 4=Asymptomatic</div>
-                    <input type="number" name="Chest pain type" placeholder="1 / 2 / 3 / 4" min="1" max="4" required>
+                    <input type="number" id="chest-pain-type" name="Chest pain type" placeholder="1 / 2 / 3 / 4" min="1" max="4" required>
                 </div>
 
                 <!-- BP -->
                 <div class="field-group">
-                    <label>Blood Pressure <span class="unit">mmHg</span></label>
-                    <input type="number" name="BP" placeholder="e.g. 130" required>
+                    <label for="bp">Blood Pressure <span class="unit">mmHg</span></label>
+                    <input type="number" id="bp" name="BP" placeholder="e.g. 130" min="1" required>
                 </div>
 
                 <!-- Cholesterol -->
                 <div class="field-group">
-                    <label>Cholesterol <span class="unit">mg/dl</span></label>
-                    <input type="number" name="Cholesterol" placeholder="e.g. 240" required>
+                    <label for="cholesterol">Cholesterol <span class="unit">mg/dl</span></label>
+                    <input type="number" id="cholesterol" name="Cholesterol" placeholder="e.g. 240" min="1" required>
                 </div>
 
                 <!-- FBS -->
                 <div class="field-group">
-                    <label>FBS Over 120 <span class="unit">1=Yes, 0=No</span></label>
-                    <input type="number" name="FBS over 120" placeholder="0 or 1" min="0" max="1" required>
+                    <label for="fbs-over-120">FBS Over 120 <span class="unit">1=Yes, 0=No</span></label>
+                    <input type="number" id="fbs-over-120" name="FBS over 120" placeholder="0 or 1" min="0" max="1" required>
                 </div>
 
                 <!-- EKG -->
                 <div class="field-group">
-                    <label>EKG Results</label>
+                    <label for="ekg-results">EKG Results</label>
                     <div class="hint">0=Normal &nbsp;|&nbsp; 1=ST-T Abnormality &nbsp;|&nbsp; 2=LV Hypertrophy</div>
-                    <input type="number" name="EKG results" placeholder="0 / 1 / 2" min="0" max="2" required>
+                    <input type="number" id="ekg-results" name="EKG results" placeholder="0 / 1 / 2" min="0" max="2" required>
                 </div>
 
                 <!-- Max HR -->
                 <div class="field-group">
-                    <label>Max Heart Rate <span class="unit">bpm</span></label>
-                    <input type="number" name="Max HR" placeholder="e.g. 150" required>
+                    <label for="max-hr">Max Heart Rate <span class="unit">bpm</span></label>
+                    <input type="number" id="max-hr" name="Max HR" placeholder="e.g. 150" min="1" required>
                 </div>
 
                 <!-- Exercise Angina -->
                 <div class="field-group">
-                    <label>Exercise Angina <span class="unit">1=Yes, 0=No</span></label>
-                    <input type="number" name="Exercise angina" placeholder="0 or 1" min="0" max="1" required>
+                    <label for="exercise-angina">Exercise Angina <span class="unit">1=Yes, 0=No</span></label>
+                    <input type="number" id="exercise-angina" name="Exercise angina" placeholder="0 or 1" min="0" max="1" required>
                 </div>
 
                 <!-- ST Depression -->
                 <div class="field-group">
-                    <label>ST Depression <span class="unit">mm</span></label>
-                    <input type="number" step="0.1" name="ST depression" placeholder="e.g. 1.6" required>
+                    <label for="st-depression">ST Depression <span class="unit">mm</span></label>
+                    <input type="number" id="st-depression" step="0.1" name="ST depression" placeholder="e.g. 1.6" required>
                 </div>
 
                 <!-- Slope ST -->
                 <div class="field-group">
-                    <label>Slope of ST</label>
+                    <label for="slope-of-st">Slope of ST</label>
                     <div class="hint">1=Upsloping &nbsp;|&nbsp; 2=Flat &nbsp;|&nbsp; 3=Downsloping</div>
-                    <input type="number" name="Slope of ST" placeholder="1 / 2 / 3" min="1" max="3" required>
+                    <input type="number" id="slope-of-st" name="Slope of ST" placeholder="1 / 2 / 3" min="1" max="3" required>
                 </div>
 
                 <!-- Vessels -->
                 <div class="field-group">
-                    <label>Vessels Fluoro <span class="unit">0–3</span></label>
-                    <input type="number" name="Number of vessels fluro" placeholder="0 / 1 / 2 / 3" min="0" max="3" required>
+                    <label for="vessels-fluro">Vessels Fluoro <span class="unit">0–3</span></label>
+                    <input type="number" id="vessels-fluro" name="Number of vessels fluro" placeholder="0 / 1 / 2 / 3" min="0" max="3" required>
                 </div>
 
                 <!-- Thallium -->
                 <div class="field-group full-width">
-                    <label>Thallium Stress Test</label>
+                    <label for="thallium">Thallium Stress Test</label>
                     <div class="hint">3=Normal &nbsp;|&nbsp; 6=Fixed Defect &nbsp;|&nbsp; 7=Reversible Defect</div>
-                    <input type="number" name="Thallium" placeholder="3 / 6 / 7" required>
+                    <input type="number" id="thallium" name="Thallium" placeholder="3 / 6 / 7" min="3" max="7" required>
                 </div>
 
             </div>
 
-            <!-- Quick fill sample rows -->
+            <!-- Quick fill sample rows
+                 NOTE: these values are illustrative rows taken from the Cleveland/Statlog
+                 heart-disease training dataset used to fit heart_model.pkl. They are NOT
+                 pulled from the dataset at runtime, so if the model is ever retrained on a
+                 different dataset these must be manually re-verified against that dataset
+                 (and against the training notebook) or they may no longer match their
+                 "Disease" / "No Disease" labels below. -->
             <div class="samples">
                 <p class="samples-title">Quick test samples from dataset:</p>
                 <div class="sample-btns">
