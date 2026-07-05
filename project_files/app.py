@@ -29,18 +29,21 @@ FEATURE_NAMES = [
     'ST depression', 'Slope of ST', 'Number of vessels fluro', 'Thallium'
 ]
 
-# Fix 2: the "0 = Presence, 1 = Absence" mapping is NOT recorded anywhere
+# Fix 2: the "Presence/Absence" -> 0/1 mapping is NOT recorded anywhere
 # inside the pickled model (no feature_names_in_/label encoder was saved
 # with it), so it can't be verified programmatically. It's pulled out into
 # a single named constant with an explicit warning so it can't be missed
 # or silently drift if the model is ever retrained.
 #
 # !!! IMPORTANT !!!
-# This value was inferred from the training notebook, not from the pickle
-# itself. If heart_model.pkl is ever regenerated, re-verify this against
+# Verified against the training notebook:
+#   df["Heart Disease"] = df["Heart Disease"].map({"Presence": 1, "Absence": 0})
+#   model.classes_ == [0, 1]
+# => 1 means "heart disease present", 0 means "absence".
+# If heart_model.pkl is ever regenerated, re-verify this against
 # model.classes_ and the label encoding used during training before
 # trusting predictions.
-DISEASE_CLASS_VALUE = 0  # class value that means "heart disease present"
+DISEASE_CLASS_VALUE = 1  # class value that means "heart disease present"
 
 # Fix 6: server-side validation so the model never sees out-of-range or
 # nonsensical values, even if a request bypasses the HTML form entirely
