@@ -3,49 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CardioScan — Bulk Prediction</title>
+    <title>CardioScan — Heart Disease Prediction</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="state-idle">
+<body class="{{ 'state-high' if risk == 'high' else 'state-low' if risk == 'low' else 'state-idle' }}">
+
+<div class="scan-grid" aria-hidden="true"></div>
 
 <div class="page-wrap">
+
+    <!-- ── Monitor bar: the signature element ── -->
+    <div class="monitor-bar">
+        <div class="monitor-left">
+            <span class="rec-dot" aria-hidden="true"></span>
+            <span class="monitor-label">CS‑7 · LIVE MONITOR</span>
+        </div>
+
+        <svg class="ecg-strip" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
+            <g class="ecg-track">
+                <path class="ecg-path" d="M0,30 L40,30 L52,30 L58,12 L64,46 L70,20 L76,30 L120,30
+                                           L160,30 L172,30 L178,12 L184,46 L190,20 L196,30 L240,30
+                                           L280,30 L292,30 L298,12 L304,46 L310,20 L316,30 L360,30
+                                           L400,30 L412,30 L418,12 L424,46 L430,20 L436,30 L480,30
+                                           L520,30 L532,30 L538,12 L544,46 L550,20 L556,30 L600,30" />
+                <path class="ecg-path" d="M0,30 L40,30 L52,30 L58,12 L64,46 L70,20 L76,30 L120,30
+                                           L160,30 L172,30 L178,12 L184,46 L190,20 L196,30 L240,30
+                                           L280,30 L292,30 L298,12 L304,46 L310,20 L316,30 L360,30
+                                           L400,30 L412,30 L418,12 L424,46 L430,20 L436,30 L480,30
+                                           L520,30 L532,30 L538,12 L544,46 L550,20 L556,30 L600,30"
+                      transform="translate(600,0)" />
+            </g>
+        </svg>
+
+        <div class="monitor-right">
+            <span class="bpm-value" id="bpmValue">72</span>
+            <span class="bpm-unit">BPM</span>
+            <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="false" title="Toggle heartbeat sound">
+                <svg class="icon-sound-on" viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                <svg class="icon-sound-off" viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </button>
+        </div>
+    </div>
+
     <header class="site-header">
         <h1 class="site-title">CardioScan</h1>
-        <p class="site-subtitle">Bulk Prediction &nbsp;·&nbsp; Upload a CSV of Patients</p>
+        <p class="site-subtitle">Clinical Decision Support &nbsp;·&nbsp; ML Risk Assessment</p>
+        <p style="margin-top:8px;"><a href="/predict_csv">Bulk Predict from CSV file →</a></p>
     </header>
 
     <main class="card">
-        <p class="form-intro">
-            Upload a CSV file with these exact column headers:
-            <br><code>Age, Sex, Chest pain type, BP, Cholesterol, FBS over 120, EKG results, Max HR, Exercise angina, ST depression, Slope of ST, Number of vessels fluro, Thallium</code>
-        </p>
+        <p class="form-intro">Enter the patient's clinical parameters below. All fields are required.</p>
 
-        <form action="/predict_csv" method="post" enctype="multipart/form-data">
-            <div class="field-group full-width">
-                <label for="file">Choose CSV file</label>
-                <input type="file" id="file" name="file" accept=".csv" required>
+        <form action="/predict" method="post" id="predictForm">
+
+            <fieldset class="field-section">
+                <legend>Patient Profile</legend>
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label for="age">Age <span class="unit">years</span></label>
+                        <input type="number" id="age" name="Age" placeholder="e.g. 67" min="1" max="120" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="sex">Sex <span class="unit">1=Male, 0=Female</span></label>
+                        <input type="number" id="sex" name="Sex" placeholder="0 or 1" min="0" max="1" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+                <legend>Vitals</legend>
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label for="bp">Blood Pressure <span class="unit">mmHg</span></label>
+                        <input type="number" id="bp" name="BP" placeholder="e.g. 130" min="1" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="max-hr">Max Heart Rate <span class="unit">bpm</span></label>
+                        <input type="number" id="max-hr" name="Max HR" placeholder="e.g. 150" min="1" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="cholesterol">Cholesterol <span class="unit">mg/dl</span></label>
+                        <input type="number" id="cholesterol" name="Cholesterol" placeholder="e.g. 240" min="1" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="fbs-over-120">FBS Over 120 <span class="unit">1=Yes, 0=No</span></label>
+                        <input type="number" id="fbs-over-120" name="FBS over 120" placeholder="0 or 1" min="0" max="1" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+                <legend>Cardiac Symptoms</legend>
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label for="chest-pain-type">Chest Pain Type</label>
+                        <div class="hint">1=Typical Angina &nbsp;|&nbsp; 2=Atypical &nbsp;|&nbsp; 3=Non-Anginal &nbsp;|&nbsp; 4=Asymptomatic</div>
+                        <input type="number" id="chest-pain-type" name="Chest pain type" placeholder="1 / 2 / 3 / 4" min="1" max="4" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="exercise-angina">Exercise Angina <span class="unit">1=Yes, 0=No</span></label>
+                        <input type="number" id="exercise-angina" name="Exercise angina" placeholder="0 or 1" min="0" max="1" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="st-depression">ST Depression <span class="unit">mm</span></label>
+                        <input type="number" id="st-depression" step="0.1" name="ST depression" placeholder="e.g. 1.6" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="slope-of-st">Slope of ST</label>
+                        <div class="hint">1=Upsloping &nbsp;|&nbsp; 2=Flat &nbsp;|&nbsp; 3=Downsloping</div>
+                        <input type="number" id="slope-of-st" name="Slope of ST" placeholder="1 / 2 / 3" min="1" max="3" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+                <legend>Diagnostic Imaging</legend>
+                <div class="form-grid">
+                    <div class="field-group">
+                        <label for="ekg-results">EKG Results</label>
+                        <div class="hint">0=Normal &nbsp;|&nbsp; 1=ST-T Abnormality &nbsp;|&nbsp; 2=LV Hypertrophy</div>
+                        <input type="number" id="ekg-results" name="EKG results" placeholder="0 / 1 / 2" min="0" max="2" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="vessels-fluro">Vessels Fluoro <span class="unit">0–3</span></label>
+                        <input type="number" id="vessels-fluro" name="Number of vessels fluro" placeholder="0 / 1 / 2 / 3" min="0" max="3" required>
+                    </div>
+                    <div class="field-group full-width">
+                        <label for="thallium">Thallium Stress Test</label>
+                        <div class="hint">3=Normal &nbsp;|&nbsp; 6=Fixed Defect &nbsp;|&nbsp; 7=Reversible Defect</div>
+                        <input type="number" id="thallium" name="Thallium" placeholder="3 / 6 / 7" min="3" max="7" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="samples">
+                <p class="samples-title">Quick test samples from dataset:</p>
+                <div class="sample-btns">
+                    <button type="button" class="sample-btn" onclick="fillSample(70,1,4,130,322,0,2,109,0,2.4,2,3,3)">
+                        Sample 1 <span class="expected presence">→ Disease</span>
+                    </button>
+                    <button type="button" class="sample-btn" onclick="fillSample(74,0,2,120,269,0,2,121,1,0.2,1,1,3)">
+                        Sample 2 <span class="expected absence">→ No Disease</span>
+                    </button>
+                </div>
             </div>
-            <button type="submit" class="predict-btn">
-                <span>Upload &amp; Download Predictions</span>
+
+            <button type="submit" class="predict-btn" id="predictBtn">
+                <span>Run Prediction</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
             </button>
         </form>
 
-        {% if error %}
-        <div class="result-box error" id="resultBox">
+        {% if prediction_text %}
+        <div class="result-box {{ risk }}" id="resultBox">
+            <div class="result-icon">
+                {% if risk == 'high' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32">
+                    <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                {% endif %}
+            </div>
             <div class="result-text">
-                <span class="result-label">Upload Error</span>
-                <strong>{{ error }}</strong>
+                <span class="result-label">Prediction Result</span>
+                <strong>{{ prediction_text }}</strong>
             </div>
         </div>
         {% endif %}
 
-        <p class="form-intro" style="margin-top: 24px;">
-            <a href="/">← Back to single prediction</a>
-        </p>
     </main>
+
+    <footer class="site-footer">
+        <p>For clinical reference only — not a substitute for professional medical diagnosis.</p>
+    </footer>
 </div>
+
+<script>
+function fillSample(age, sex, cp, bp, chol, fbs, ekg, hr, angina, std, slope, vessels, thal) {
+    document.querySelector('[name="Age"]').value = age;
+    document.querySelector('[name="Sex"]').value = sex;
+    document.querySelector('[name="Chest pain type"]').value = cp;
+    document.querySelector('[name="BP"]').value = bp;
+    document.querySelector('[name="Cholesterol"]').value = chol;
+    document.querySelector('[name="FBS over 120"]').value = fbs;
+    document.querySelector('[name="EKG results"]').value = ekg;
+    document.querySelector('[name="Max HR"]').value = hr;
+    document.querySelector('[name="Exercise angina"]').value = angina;
+    document.querySelector('[name="ST depression"]').value = std;
+    document.querySelector('[name="Slope of ST"]').value = slope;
+    document.querySelector('[name="Number of vessels fluro"]').value = vessels;
+    document.querySelector('[name="Thallium"]').value = thal;
+}
+
+/* ── Heartbeat audio (synthesized, no external files) ──
+   Made significantly louder than before:
+   - a master gain stage boosts overall output well above unity
+   - a compressor node prevents clipping/distortion at that higher level
+   - each "lub"/"dub" now layers a bass tone + a mid punch tone so it
+     cuts through on laptop/phone speakers, not just headphones
+*/
+const HeartAudio = (() => {
+    let ctx = null;
+    let masterGain = null;
+    let compressor = null;
+
+    function ensureCtx() {
+        if (!ctx) {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Compressor first so the boosted master gain can't clip/distort
+            compressor = ctx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+            compressor.knee.setValueAtTime(30, ctx.currentTime);
+            compressor.ratio.setValueAtTime(12, ctx.currentTime);
+            compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+            compressor.release.setValueAtTime(0.25, ctx.currentTime);
+
+            // Master gain boosted well above 1.0 — the compressor tames
+            // any peaks so it stays loud without crackling
+            masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(2.6, ctx.currentTime);
+
+            masterGain.connect(compressor);
+            compressor.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+    }
+
+    function thump(time, freq, gain, decay, type = 'sine') {
+        const c = ensureCtx();
+        const osc = c.createOscillator();
+        const amp = c.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, time);
+        amp.gain.setValueAtTime(0.0001, time);
+        amp.gain.exponentialRampToValueAtTime(gain, time + 0.012);
+        amp.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+        osc.connect(amp).connect(masterGain);
+        osc.start(time);
+        osc.stop(time + decay + 0.05);
+    }
+
+    function beat(time, freq, decay) {
+        // Layer a deep bass tone with a slightly higher punch tone so the
+        // beat is audible even on small, bass-weak speakers.
+        thump(time, freq, 1.0, decay, 'sine');
+        thump(time, freq * 2.5, 0.5, decay * 0.6, 'triangle');
+    }
+
+    function lubDub(when = 0) {
+        const c = ensureCtx();
+        const t0 = c.currentTime + when;
+        beat(t0, 70, 0.20);        // "lub" — louder and slightly higher pitched
+        beat(t0 + 0.18, 52, 0.22); // "dub"
+    }
+
+    return { lubDub, ensureCtx };
+})();
+
+let soundEnabled = localStorage.getItem('cardioscan-sound') === 'on';
+const soundToggle = document.getElementById('soundToggle');
+const body = document.body;
+
+function updateToggleUI() {
+    soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+    soundToggle.classList.toggle('is-muted', !soundEnabled);
+}
+updateToggleUI();
+
+soundToggle.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('cardioscan-sound', soundEnabled ? 'on' : 'off');
+    updateToggleUI();
+    if (soundEnabled) {
+        HeartAudio.ensureCtx();
+        HeartAudio.lubDub(0.05);
+    }
+});
+
+/* ── React to a returned prediction on page load ── */
+const bpmEl = document.getElementById('bpmValue');
+const resultBox = document.getElementById('resultBox');
+
+function animateBpm(target, durationMs) {
+    const start = parseInt(bpmEl.textContent, 10) || 72;
+    const startTime = performance.now();
+    function tick(now) {
+        const p = Math.min(1, (now - startTime) / durationMs);
+        bpmEl.textContent = Math.round(start + (target - start) * p);
+        if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+if (body.classList.contains('state-high')) {
+    animateBpm(124, 900);
+    if (soundEnabled) {
+        HeartAudio.lubDub(0.1);
+        HeartAudio.lubDub(0.55);
+        HeartAudio.lubDub(1.0);
+    }
+} else if (body.classList.contains('state-low')) {
+    animateBpm(64, 900);
+    if (soundEnabled) {
+        HeartAudio.lubDub(0.1);
+    }
+}
+
+if (resultBox) {
+    resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+document.getElementById('predictForm').addEventListener('submit', () => {
+    if (soundEnabled) HeartAudio.lubDub(0);
+});
+</script>
 
 </body>
 </html>
