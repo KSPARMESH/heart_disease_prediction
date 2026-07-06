@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardioScan — Bulk Prediction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="state-idle">
+
+<div class="page-wrap">
+    <header class="site-header">
+        <h1 class="site-title">CardioScan</h1>
+        <p class="site-subtitle">Bulk Prediction &nbsp;·&nbsp; Upload a CSV of Patients</p>
+    </header>
+
+    <main class="card">
+        <p class="form-intro">
+            Upload a CSV file with these exact column headers:
+            <br><code>Age, Sex, Chest pain type, BP, Cholesterol, FBS over 120, EKG results, Max HR, Exercise angina, ST depression, Slope of ST, Number of vessels fluro, Thallium</code>
+        </p>
+
+        <form action="/predict_csv" method="post" enctype="multipart/form-data">
+            <div class="field-group full-width">
+                <label for="file">Choose CSV file</label>
+                <input type="file" id="file" name="file" accept=".csv" required>
+            </div>
+            <button type="submit" class="predict-btn">
+                <span>Upload &amp; Download Predictions</span>
+            </button>
+        </form>
+
+        {% if error %}
+        <div class="result-box error" id="resultBox">
+            <div class="result-text">
+                <span class="result-label">Upload Error</span>
+                <strong>{{ error }}</strong>
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="form-intro" style="margin-top: 24px;">
+            <a href="/">← Back to single prediction</a>
+        </p>
+    </main>
+</div>
+
+</body>
+</html>
