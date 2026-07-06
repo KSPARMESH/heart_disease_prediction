@@ -1,10 +1,11 @@
+import io
 import logging
 import os
 import pickle
 
 import numpy as np
 import pandas as pd
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 
 # --- App / logging setup -----------------------------------------------
 app = Flask(__name__)
@@ -79,6 +80,32 @@ def validate_feature(name, value):
             raise ValueError(f"'{name}' must be between {low} and {high}, got {value}")
 
 
+def run_model_on_row(input_values):
+    """Shared prediction logic for a single row of already-validated values.
+
+    Returns True if the model predicts heart disease present, else False.
+    """
+    features_df = pd.DataFrame([input_values], columns=FEATURE_NAMES)
+
+    # If the scaler remembers its fit column order, force-align to it
+    if hasattr(scaler, "feature_names_in_"):
+        features_df = features_df[list(scaler.feature_names_in_)]
+
+    features_scaled = scaler.transform(features_df)
+    prediction = model.predict(features_scaled)[0]
+
+    # Normalize prediction to a plain Python value for reliable comparison
+    pred_value = prediction.item() if isinstance(prediction, np.generic) else prediction
+
+    # Handle both numeric-encoded (0/1) and string-encoded ('Presence'/'Absence') labels
+    if isinstance(pred_value, str):
+        is_disease = pred_value.strip().lower() == 'presence'
+    else:
+        is_disease = int(pred_value) == DISEASE_CLASS_VALUE
+
+    return is_disease
+
+
 @app.route('/')
 def home():
     return render_template("index.html")
@@ -99,29 +126,7 @@ def predict():
             validate_feature(feature_name, value)
             input_values.append(value)
 
-        # Build input in the EXACT order the scaler/model were fit on
-        features_df = pd.DataFrame([input_values], columns=FEATURE_NAMES)
-
-        # If the scaler remembers its fit column order, force-align to it
-        if hasattr(scaler, "feature_names_in_"):
-            features_df = features_df[list(scaler.feature_names_in_)]
-
-        features_scaled = scaler.transform(features_df)
-        prediction = model.predict(features_scaled)[0]
-
-        logger.info("Raw prediction value: %s (%s)", prediction, type(prediction))
-
-        # Normalize prediction to a plain Python value for reliable comparison
-        if isinstance(prediction, np.generic):
-            pred_value = prediction.item()
-        else:
-            pred_value = prediction
-
-        # Handle both numeric-encoded (0/1) and string-encoded ('Presence'/'Absence') labels
-        if isinstance(pred_value, str):
-            is_disease = pred_value.strip().lower() == 'presence'
-        else:
-            is_disease = int(pred_value) == DISEASE_CLASS_VALUE
+        is_disease = run_model_on_row(input_values)
 
         if is_disease:
             result = "Heart Disease Detected"
@@ -144,6 +149,80 @@ def predict():
         risk = "error"
 
     return render_template("index.html", prediction_text=result, risk=risk)
+
+
+@app.route('/predict_csv', methods=['GET', 'POST'])
+def predict_csv():
+    """Bulk prediction: upload a CSV of many patients, get back a CSV with
+    a Prediction column added for every row, as a direct file download.
+    Rows with missing/invalid values are skipped and flagged rather than
+    crashing the whole batch.
+    """
+    if request.method == 'GET':
+        return render_template('upload_csv.html')
+
+    file = request.files.get('file')
+    if not file or file.filename == '':
+        return render_template('upload_csv.html', error="Please choose a CSV file to upload.")
+
+    if not file.filename.lower().endswith('.csv'):
+        return render_template('upload_csv.html', error="Only .csv files are supported.")
+
+    try:
+        df = pd.read_csv(file)
+    except Exception as e:
+        logger.warning("Could not parse uploaded CSV: %s", e)
+        return render_template('upload_csv.html', error=f"Could not read this file as CSV: {e}")
+
+    missing_cols = [c for c in FEATURE_NAMES if c not in df.columns]
+    if missing_cols:
+        return render_template(
+            'upload_csv.html',
+            error=f"Your CSV is missing required column(s): {', '.join(missing_cols)}. "
+                  f"Expected columns: {', '.join(FEATURE_NAMES)}"
+        )
+
+    results = []
+    for idx, row in df.iterrows():
+        row_errors = []
+        input_values = []
+        for feature_name in FEATURE_NAMES:
+            raw_value = row[feature_name]
+            try:
+                if pd.isna(raw_value):
+                    raise ValueError(f"Missing value for '{feature_name}'")
+                value = float(raw_value)
+                validate_feature(feature_name, value)
+                input_values.append(value)
+            except (ValueError, TypeError) as e:
+                row_errors.append(str(e))
+
+        if row_errors:
+            results.append({"Prediction": "Skipped - invalid row", "Details": "; ".join(row_errors)})
+            continue
+
+        try:
+            is_disease = run_model_on_row(input_values)
+            results.append({
+                "Prediction": "Heart Disease Detected" if is_disease else "No Heart Disease Detected",
+                "Details": ""
+            })
+        except Exception:
+            logger.exception("Unexpected error predicting row %s", idx)
+            results.append({"Prediction": "Error - could not predict", "Details": "Server error, check logs"})
+
+    results_df = pd.concat([df.reset_index(drop=True), pd.DataFrame(results)], axis=1)
+
+    buffer = io.StringIO()
+    results_df.to_csv(buffer, index=False)
+    byte_buffer = io.BytesIO(buffer.getvalue().encode('utf-8'))
+
+    return send_file(
+        byte_buffer,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='heart_disease_predictions.csv'
+    )
 
 
 if __name__ == "__main__":
